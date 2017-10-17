@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+
+    <div class="marco">
+  
+    </div>
+
+    <style>
+        body, html {margin: 0; padding: 0; height: 100%;}
+        body{display: flex; align-items: center; justify-content: center; background-color: #ddd; padding: 2rem;}
+        .marco{ 
+            height: fit-content;
+            width: 1000px; 
+            background-color: #ccc;
+            box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 1);
+            display: block;
+            margin: auto;
+        }
+
+        .barra{
+            fill: rgba(100, 100, 200, 1);
+        }
+        .barra:hover{
+            fill: rgba(100, 10, 10, 0.6);
+        }
+        .info{
+            opacity: 0;
+            display: none
+        }
+        .info.mostrar{
+            opacity: 1;
+            display: unset;
+            width: fit-content;
+            height: fit-content;
+            position: absolute;
+            background-color: black;
+            color: white;
+            padding: .4rem;
+            border-radius: 10px;
+            border: 1px solid red;
+        }
+    </style>
+
+    <script>
+        const url = "https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/GDP-data.json"
+
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        //LLamada para obtener datos
+        fetch(url)
+        .then( respuesta => respuesta.json() )
+        .then( datos => {
+            // Al obtenerlos, hacemos una llamada al render
+            render(datos.data);
+        })
+        .catch( err => err);
+
+        //Preparamos variables basicas
+        var margin = {top: 20, right: 20, bottom: 30, left: 50},
+            //tamaño de todo el SVG
+            width = 1000,
+            height = 700,
+            //tamaño que tendra la agrupacion interior
+            innerHeight = height - margin.bottom - margin.top,
+            innerWidth = width - margin.left - margin.right
+
+        //Añadimos el SVG
+        var svg = d3.select(".marco").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+        //Añadimos la agrupacion principal con margenes
+        var g = d3.select("svg").append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`)
+
+        // creamos escalas, una de tiempo(horizontal) y una linear(vertical)
+        var y = d3.scaleLinear().rangeRound([innerHeight, 0]),
+            x = d3.scaleTime().range([0, innerWidth]);
+
+        function render(datos){
+        
+        var info = d3.select(".marco").append("div").attr("class", "info");
+        
+        //Variables necesarias
+        var firstDate = new Date(datos[0][0]),
+            lastDate = new Date(datos[274][0]),
+            anchoBarra = innerWidth / datos.length;
+            
+        //añadimos el dominio a las escalas
+        y.domain( [0, d3.max(datos, d => d[1])] );
+        x.domain([firstDate, lastDate]);
+        
+        //Eje horizontal
+        g.append("g")
+            .attr("transform", `translate(0, ${innerHeight})`)
+            .call(d3.axisBottom(x).ticks(10))
+        
+        //Eje vertical
+        g.append("g")
+            .attr("transform", `translate(0, 0)`)
+            .call(d3.axisLeft(y))
+
+        //Barras
+        g.selectAll("rect")
+            .data(datos)
+            .enter().append("rect")
+            .attr("class", "barra")
+            .attr("x", d => x( new Date(d[0])) )
+            .attr("y", d => y(d[1]) )
+            .attr("width",  anchoBarra )
+            .attr("height", d => innerHeight - y(d[1]) )
+            .on("mouseover", d => {
+            var fecha = new Date(d[0]),
+                año = fecha.getFullYear(),
+                numeroMes = fecha.getMonth();
+            
+            info.attr("class", "info mostrar")
+                .html(`<span class='titulo-info'> ${d[1]} Billion </span>
+                    <br>
+                    <span class='mes-info'>${año} - ${months[numeroMes]}</span>`)
+                .style("top", (d3.event.pageY - 50) + "px")
+                .style("left", (d3.event.pageX + 15) + "px")
+            })
+            .on("mouseout", d => {
+            info.attr("class", "info")
+            })
+        } 
+    </script>
+</body>
+</html>
