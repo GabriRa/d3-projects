@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+
+    <div class="titulo">
+
+        <h1>Global Temperature</h1>
+        <p>Colors represent temperature varience</p>
+
+        <div class="info leyenda">
+            <span class="leyenda-fecha">Date</span>
+            <br>
+            <span class="leyenda-temp">Average tempereture + Temperature Varience</span>
+            <br>
+            <span class="leyenda-variance">Temperature Varience</span>
+        </div>
+
+    </div>
+
+    <div class="marco">
+    
+    </div>
+
+    <script>
+    const url = "https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/global-temperature.json"
+
+    fetch(url)
+        .then(response => response.json() )
+        .then(datos => {
+            render(datos)
+        })
+
+    var margin = { top: 50, left:50, bottom: 50, right: 50 },
+        width = document.querySelector(".marco").clientWidth,
+        height = document.querySelector(".marco").clientHeight,
+        innerWidth = width - margin.left - margin.right,
+        innerHeight = height - margin.top - margin.bottom,
+        colors = ["#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#ffffbf", "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142"],
+        meses =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+    var svg = d3.select(".marco").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var g = d3.select("svg").append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    var x = d3.scaleLinear().range([0, innerWidth]),
+        y = d3.scaleLinear().range([innerHeight, 0]);
+    // .range([colors[0], colors[colors.length-1]]); 
+
+    function render(datos){
+    var alturaBarra = innerHeight / 11,
+        anchoBarra = innerWidth / (datos.monthlyVariance.length / 12),
+        temperaturaBase = datos.baseTemperature;
+    
+    x.domain(d3.extent(datos.monthlyVariance, d => d.year) );
+    y.domain([12.5, 0.5]);
+    var colores = d3.scaleQuantize().domain(d3.extent(datos.monthlyVariance, d => d.variance))
+        .range(colors); 
+    
+    //Caja info
+    var info = d3.select(".marco").append("div").attr("class", "info desactivada");
+    
+    //Eje horizontal
+    g.append("g")
+        .attr("transform", `translate(0, ${innerHeight})`)
+        .call(d3.axisBottom(x).ticks(20))
+    //Eje vertical
+    g.append("g")
+        .call(d3.axisLeft(y))
+    
+    g.selectAll("rect")
+        .data(datos.monthlyVariance)
+        .enter().append("rect")
+        .attr("width", anchoBarra)
+        .attr("height", alturaBarra)
+        .attr("x", d => x(d.year) )
+        .attr("y", d => y(d.month) - alturaBarra/2 )
+        .attr("fill", d => colores(d.variance))
+        .on("mouseover", d => {
+        
+        info.html(`<span class="info-fecha"> ${d.year} - ${meses[d.month-1]} </span>
+                    <br>
+                    <span class="info-temp"> ${(temperaturaBase + d.variance).toFixed(3)}</span>
+                    <br>
+                    <span class="info-variance"> ${d.variance}</span>`)  
+            .attr("class", "info activada")
+            .style("top", (d3.event.pageY - 15) + "px")
+            .style("left", (d3.event.pageX + 15) + "px")
+        })
+        .on("mouseout", d=> {
+        info.attr("class", "info desactivada")
+        })
+    
+    }
+    </script>
+
+    <style>
+    html, body{padding: 0; margin: 0; width: 100%; background-color: #222;   font-family: 'Open Sans', sans-serif;color: white;}
+    .marco{
+        height: 500px;
+        width: 1000px;
+        box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, .7);
+        margin: 2rem auto;
+        background-color:rgba(250, 70, 70, .7);
+    }
+    .info{
+        height: fit-content;
+        width: fit-content;
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 10px;
+        color: white;
+        font-weight: 700;
+        padding: .3rem;
+        position: absolute;
+        text-align: center;
+    }
+    span.info-variance{
+        color: rgba(255, 255, 255, 0.7)
+    }
+    .info.desactivada{
+        opacity: 0;
+        display: none;
+    }
+    .titulo{
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: center;
+        margin: 1rem;
+    }
+    .titulo>h1{
+        margin: .5rem;
+        background-color: rgba(100, 10, 10, .7);
+        color: #ccc; 
+        padding: 1rem;
+        border-radius: 10px;
+    }
+    .leyenda{
+        position: unset;
+    }
+    </style>
+</body>
+</html>
